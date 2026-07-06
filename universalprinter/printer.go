@@ -42,7 +42,10 @@ type DocumentPrinter struct {
 }
 
 func New() *DocumentPrinter {
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = os.TempDir()
+	}
 	printable := make(map[string]bool, len(printableTypes))
 	for k := range printableTypes {
 		printable[k] = true
@@ -105,24 +108,7 @@ func (p *DocumentPrinter) printFilePath(filePath string, o printOptions) (*Print
 		}, nil
 	}
 
-	if o.fallback {
-		pdfPath, fallbackErr := p.savePDFFallback(
-			fmt.Sprintf("[File: %s]\n[MIME: %s]\n[Size: %d bytes]", filePath, mimeType, fileSize(filePath)),
-			o.pdfFilename,
-		)
-		if fallbackErr == nil {
-			return &PrintResult{
-				Success: false,
-				Message: fmt.Sprintf("Printing failed. PDF fallback saved to: %s", pdfPath),
-				PDFPath: pdfPath,
-			}, nil
-		}
-	}
-
-	return &PrintResult{
-		Success: false,
-		Message: fmt.Sprintf("Printing failed: %v", err),
-	}, err
+	return p.handleFallback(err, fmt.Sprintf("[File: %s]\n[MIME: %s]\n[Size: %d bytes]", filePath, mimeType, fileSize(filePath)), o)
 }
 
 func (p *DocumentPrinter) printTextContent(text string, o printOptions) (*PrintResult, error) {
@@ -146,21 +132,7 @@ func (p *DocumentPrinter) printTextContent(text string, o printOptions) (*PrintR
 		}, nil
 	}
 
-	if o.fallback {
-		pdfPath, fallbackErr := p.savePDFFallback(text, o.pdfFilename)
-		if fallbackErr == nil {
-			return &PrintResult{
-				Success: false,
-				Message: fmt.Sprintf("Printing failed. PDF fallback saved to: %s", pdfPath),
-				PDFPath: pdfPath,
-			}, nil
-		}
-	}
-
-	return &PrintResult{
-		Success: false,
-		Message: fmt.Sprintf("Printing failed: %v", err),
-	}, err
+	return p.handleFallback(err, text, o)
 }
 
 func (p *DocumentPrinter) savePDFFallback(content string, filename string) (string, error) {
@@ -176,6 +148,29 @@ func (p *DocumentPrinter) savePDFFallback(content string, filename string) (stri
 		return "", err
 	}
 	return pdfPath, nil
+}
+
+func (p *DocumentPrinter) handleFallback(err error, content string, o printOptions) (*PrintResult, error) {
+	if !o.fallback {
+		return &PrintResult{
+			Success: false,
+			Message: fmt.Sprintf("Printing failed: %v", err),
+		}, err
+	}
+
+	pdfPath, fallbackErr := p.savePDFFallback(content, o.pdfFilename)
+	if fallbackErr != nil {
+		return &PrintResult{
+			Success: false,
+			Message: fmt.Sprintf("Printing failed: %v", err),
+		}, err
+	}
+
+	return &PrintResult{
+		Success: false,
+		Message: fmt.Sprintf("Printing failed. PDF fallback saved to: %s", pdfPath),
+		PDFPath: pdfPath,
+	}, nil
 }
 
 func fileSize(path string) int64 {
