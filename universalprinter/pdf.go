@@ -30,13 +30,12 @@ func writeMinimalPDF(content string, outputPath string) error {
 	fontNum := addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
 
 	var textOps strings.Builder
-	textOps.WriteString("BT /F1 12 Tf 50 750 Td\n")
+	textOps.WriteString("/F1 12 Tf 50 750 Td\n")
 	for _, line := range lines {
 		safe := strings.ReplaceAll(line, "(", "\\(")
 		safe = strings.ReplaceAll(safe, ")", "\\)")
 		textOps.WriteString(fmt.Sprintf("(%s) Tj 0 -14 Td\n", safe))
 	}
-	textOps.WriteString("ET")
 
 	stream := fmt.Sprintf("q\n1 0 0 1 0 0 cm\nBT\n/F1 12 Tf\n50 750 Td\n%s\nET\nQ", textOps.String())
 	streamBytes := []byte(stream)
