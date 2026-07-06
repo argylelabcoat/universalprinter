@@ -35,6 +35,78 @@ func TestWriteMinimalPDF(t *testing.T) {
 	}
 }
 
+func TestNew(t *testing.T) {
+	p := New()
+	if p == nil {
+		t.Fatal("New() returned nil")
+	}
+	if p.system == "" {
+		t.Error("system not set")
+	}
+	if p.downloads == "" {
+		t.Error("downloads path not set")
+	}
+}
+
+func TestGetSupportedFileTypes(t *testing.T) {
+	p := New()
+	types := p.GetSupportedFileTypes()
+	if len(types) == 0 {
+		t.Error("GetSupportedFileTypes returned empty set")
+	}
+	for _, ext := range []string{".txt", ".pdf", ".jpg", ".html"} {
+		found := false
+		for _, got := range types {
+			if got == ext {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("GetSupportedFileTypes missing %s", ext)
+		}
+	}
+}
+
+func TestIsFilePrintable(t *testing.T) {
+	p := New()
+	tests := []struct {
+		path string
+		want bool
+	}{
+		{"doc.pdf", true},
+		{"image.jpg", true},
+		{"unknown.xyz", false},
+	}
+	for _, tt := range tests {
+		if got := p.IsFilePrintable(tt.path); got != tt.want {
+			t.Errorf("IsFilePrintable(%q) = %v, want %v", tt.path, got, tt.want)
+		}
+	}
+}
+
+func TestPrintText_NoFallback(t *testing.T) {
+	p := New()
+	result, err := p.PrintText("test", WithFallback(false))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("result is nil")
+	}
+}
+
+func TestPrintFile_NotFound(t *testing.T) {
+	p := New()
+	result, err := p.PrintFile("/nonexistent/file.txt")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Success {
+		t.Error("expected Success=false for nonexistent file")
+	}
+}
+
 func TestWriteMinimalPDF_EmptyContent(t *testing.T) {
 	path := t.TempDir() + "/empty.pdf"
 	err := writeMinimalPDF("", path)
