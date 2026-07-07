@@ -3,6 +3,7 @@ package universalprinter
 import (
 	"bytes"
 	"os"
+	"slices"
 	"testing"
 )
 
@@ -55,13 +56,7 @@ func TestGetSupportedFileTypes(t *testing.T) {
 		t.Error("GetSupportedFileTypes returned empty set")
 	}
 	for _, ext := range []string{".txt", ".pdf", ".jpg", ".html"} {
-		found := false
-		for _, got := range types {
-			if got == ext {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(types, ext)
 		if !found {
 			t.Errorf("GetSupportedFileTypes missing %s", ext)
 		}

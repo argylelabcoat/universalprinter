@@ -19,7 +19,7 @@ func writeMinimalPDF(content string, outputPath string) error {
 
 	addObject := func(obj string) int {
 		offsets = append(offsets, len(pdf))
-		pdf = append(pdf, []byte(fmt.Sprintf("%d 0 obj\n", len(offsets)))...)
+		pdf = append(pdf, fmt.Appendf(nil, "%d 0 obj\n", len(offsets))...)
 		pdf = append(pdf, []byte(obj)...)
 		pdf = append(pdf, []byte("\nendobj\n")...)
 		return len(offsets)
@@ -53,16 +53,16 @@ func writeMinimalPDF(content string, outputPath string) error {
 
 	xrefStart := len(pdf)
 	pdf = append(pdf, []byte("xref\n")...)
-	pdf = append(pdf, []byte(fmt.Sprintf("0 %d\n", len(offsets)+1))...)
+	pdf = append(pdf, fmt.Appendf(nil, "0 %d\n", len(offsets)+1)...)
 	pdf = append(pdf, []byte("0000000000 65535 f \n")...)
 	for _, off := range offsets {
-		pdf = append(pdf, []byte(fmt.Sprintf("%010d 00000 n \n", off))...)
+		pdf = append(pdf, fmt.Appendf(nil, "%010d 00000 n \n", off)...)
 	}
 
 	pdf = append(pdf, []byte("trailer\n")...)
-	pdf = append(pdf, []byte(fmt.Sprintf("<< /Size %d /Root %d 0 R >>\n", len(offsets)+1, catalogNum))...)
+	pdf = append(pdf, fmt.Appendf(nil, "<< /Size %d /Root %d 0 R >>\n", len(offsets)+1, catalogNum)...)
 	pdf = append(pdf, []byte("startxref\n")...)
-	pdf = append(pdf, []byte(fmt.Sprintf("%d\n", xrefStart))...)
+	pdf = append(pdf, fmt.Appendf(nil, "%d\n", xrefStart)...)
 	pdf = append(pdf, []byte("%%EOF\n")...)
 
 	return os.WriteFile(outputPath, pdf, 0644)
