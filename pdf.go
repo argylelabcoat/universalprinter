@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+// writeMinimalPDF generates a single-page PDF 1.4 file with Helvetica text
+// at the given path. It builds the PDF structure manually (objects, xref table,
+// trailer) with no external dependencies. This is used as a fallback when the
+// OS print command fails.
 func writeMinimalPDF(content string, outputPath string) error {
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
 		return fmt.Errorf("creating output directory: %w", err)
